@@ -1,0 +1,42 @@
+<?php
+//*** Prevent combination of Afternoon Tea and other prods in same cart ***//
+function dont_add_at_to_cart_containing_other($validation, $product_id) {
+
+// Set flag false until we find a product in cat Afternoon Tea
+    $cart_has_at = false;
+
+// Set $cat_check true if a cart item is in Afternoon Tea cat
+    foreach (WC()->cart->get_cart() as $cart_item_key => $cart_item) {
+
+        $product = $cart_item['data'];
+
+        if (has_term('Afternoon Tea', 'product_cat', $product->id)) {
+            $cart_has_at = true;
+            // break because we only need one "true" to matter here
+            break;
+        }
+    }
+
+    $product_is_at = false;
+    if (has_term('Afternoon Tea', 'product_cat', $product_id)) {
+        $product_is_at = true;
+    }
+
+// Return true if cart empty
+    if (!WC()->cart->get_cart_contents_count() == 0) {
+        // If cart contains Afternoon Tea and product to be added is not Afternoon Tea, display error message and return false.
+        if ($cart_has_at && !$product_is_at) {
+            wc_add_notice('Afternoon Tea Delivery & Pizza Delivery are two separate services and run on two different schedules. We apologise for any inconvenience caused, if you would like to order both Pizza Delivery and Afternoon Tea Delivery, please do so separately.', 'error');
+            $validation = false;
+        }
+        // If cart contains a product that is not Afternoon Tea and product to be added is Afternoon, display error message and return false.
+        elseif (!$cart_has_at && $product_is_at) {
+            wc_add_notice('Afternoon Tea Delivery & Pizza Delivery are two separate services and run on two different schedules. We apologise for any inconvenience caused, if you would like to order both Pizza Delivery and Afternoon Tea Delivery, please do so separately.');
+            $validation = false;
+        }
+    }
+    // Otherwise, return true.
+    return $validation;
+}
+
+add_filter('woocommerce_add_to_cart_validation', 'dont_add_at_to_cart_containing_other', 10, 2);
